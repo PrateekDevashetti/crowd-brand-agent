@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Pricing — Crowd</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/site/site.css" />
+</head>
+<body>
+
+<nav class="site"><div class="wrap bar">
+  <a class="wordmark" href="/"><svg viewBox="0 0 32 32" width="26" height="26"><g fill="#D97757"><circle cx="16" cy="10" r="5"/><circle cx="8" cy="20" r="4.2"/><circle cx="24" cy="20" r="4.2"/><circle cx="16" cy="24" r="3.4" fill="#A8552F"/></g></svg> Crowd</a>
+  <div class="links"><a href="/brands">Brands</a><a href="/pricing" class="on">Pricing</a><a href="/docs">Docs</a><a href="/#mcp">MCP</a></div>
+  <div class="cta"><a class="btn btn-ghost" href="/login">Sign in</a><a class="btn btn-clay" href="/login">Get started</a></div>
+</div></nav>
+
+<header class="page-hero center">
+  <div class="wrap">
+    <div class="kicker rv">Pricing</div>
+    <h1 class="rv">Simple pricing.</h1>
+    <p class="rv" style="margin:14px auto 0">API and MCP included in every plan. 2K = 1 credit · 4K = 2 credits · failed generations refund automatically.</p>
+  </div>
+</header>
+
+<section class="block" style="padding-top:24px">
+  <div class="wrap">
+    <div class="plans">
+      <div class="plan rv">
+        <h3>Free</h3>
+        <div class="price">$0<small>/mo</small></div>
+        <div class="per">100 credits to start</div>
+        <ul>
+          <li>1 brand</li>
+          <li>Generate, edit, resize</li>
+          <li>Full API &amp; MCP access</li>
+          <li>Plain-English search</li>
+        </ul>
+        <a class="btn btn-ghost" href="/login">Start free</a>
+      </div>
+      <div class="plan hot rv">
+        <div class="flag">Most popular</div>
+        <h3>Pro</h3>
+        <div class="price">$29<small>/mo</small></div>
+        <div class="per">300 credits/mo · rollover up to 2×</div>
+        <ul>
+          <li>Unlimited brands</li>
+          <li>4K generation</li>
+          <li>Reference images &amp; variants</li>
+          <li>Priority generation queue</li>
+          <li>Agent skill + templates</li>
+        </ul>
+        <a class="btn btn-clay" href="/login">Get Pro</a>
+      </div>
+      <div class="plan rv">
+        <h3>Scale</h3>
+        <div class="price">$90<small>/mo</small></div>
+        <div class="per">1,000 credits/mo · volume rates beyond</div>
+        <ul>
+          <li>Everything in Pro</li>
+          <li>Shared workspace &amp; pooled credits</li>
+          <li>Unlimited team seats</li>
+          <li>Single invoice billing</li>
+          <li>Volume discounts on credits</li>
+        </ul>
+        <a class="btn btn-ghost" href="/login">Get Scale</a>
+      </div>
+    </div>
+    <p class="center rv" style="margin-top:34px;color:var(--ink-soft);font-size:14.5px">
+      Integrating at scale? Self-host the whole thing — it's your code and your storage. <a href="/docs" style="color:var(--clay-deep);text-decoration:underline">Read the docs</a>.
+    </p>
+  </div>
+</section>
+
+<section class="block" style="background:var(--ivory)">
+  <div class="wrap">
+    <h2 class="center rv">Credit math, simply.</h2>
+    <div class="trio" style="margin-top:36px">
+      <div class="card3 rv"><div class="ic">1</div><h3>2K image = 1 credit</h3><p>Generations, edits, and resizes each cost one credit at standard resolution, per variant.</p></div>
+      <div class="card3 rv"><div class="ic">2</div><h3>4K image = 2 credits</h3><p>Double resolution, double credits. Imports and scraped assets are always free.</p></div>
+      <div class="card3 rv"><div class="ic">↩</div><h3>Failures refund</h3><p>If a job fails, its credits come straight back with a ledger entry you can audit.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="final">
+  <div class="dots"></div>
+  <div class="wrap" style="position:relative">
+    <h2 class="rv">Start with 100 free credits.</h2>
+    <p class="rv">No card required for the scaffold — it's yours.</p>
+    <a class="btn btn-clay btn-lg rv" href="/login">Get started</a>
+  </div>
+</section>
+
+<footer class="site"><div class="wrap">
+  <div class="cols">
+    <div><a class="wordmark" href="/"><svg viewBox="0 0 32 32" width="24" height="24"><g fill="#D97757"><circle cx="16" cy="10" r="5"/><circle cx="8" cy="20" r="4.2"/><circle cx="24" cy="20" r="4.2"/><circle cx="16" cy="24" r="3.4" fill="#A8552F"/></g></svg> Crowd</a><div class="tag">The brand layer for agents.</div></div>
+    <div><h5>Explore</h5><a class="f" href="/#features">Features</a><a class="f" href="/brands">Brands</a><a class="f" href="/#mcp">MCP</a></div>
+    <div><h5>Docs</h5><a class="f" href="/docs">API</a><a class="f" href="/docs/llms.txt">llms.txt</a><a class="f" href="/api/v1/spec.json">OpenAPI</a></div>
+    <div><h5>Resources</h5><a class="f" href="/skills/brandlayer.skill">Agent skill</a><a class="f" href="/docs#examples">Templates</a></div>
+  </div>
+  <div class="legal">© 2026 Crowd.</div>
+</div></footer>
+
+<script>
+  const io = new IntersectionObserver((es) => es.forEach((e) => e.isIntersecting && e.target.classList.add("in")), { threshold: 0.12 });
+  document.querySelectorAll(".rv").forEach((el) => io.observe(el));
+</script>
+</body>
+</html>

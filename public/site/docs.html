@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Docs — Crowd</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/site/site.css" />
+</head>
+<body>
+
+<nav class="site"><div class="wrap bar">
+  <a class="wordmark" href="/"><svg viewBox="0 0 32 32" width="26" height="26"><g fill="#D97757"><circle cx="16" cy="10" r="5"/><circle cx="8" cy="20" r="4.2"/><circle cx="24" cy="20" r="4.2"/><circle cx="16" cy="24" r="3.4" fill="#A8552F"/></g></svg> Crowd</a>
+  <div class="links"><a href="/brands">Brands</a><a href="/pricing">Pricing</a><a href="/docs" class="on">Docs</a><a href="/#mcp">MCP</a></div>
+  <div class="cta"><a class="btn btn-ghost" href="/login">Sign in</a><a class="btn btn-clay" href="/login">Get started</a></div>
+</div></nav>
+
+<header class="page-hero">
+  <div class="wrap">
+    <div class="kicker">Documentation</div>
+    <h1>Build with Crowd.</h1>
+    <p>REST API, MCP server, agent skill, and copy-ready templates. Agent-readable docs live at <a href="/docs/llms.txt" style="color:var(--clay-deep);text-decoration:underline">/docs/llms.txt</a>; the OpenAPI spec at <a href="/api/v1/spec.json" style="color:var(--clay-deep);text-decoration:underline">/api/v1/spec.json</a>.</p>
+  </div>
+</header>
+
+<section class="block" style="padding-top:10px">
+  <div class="wrap doc">
+
+    <h2 id="quickstart">Quickstart</h2>
+    <p>Authenticate with <code>x-api-key</code>. Everything async returns <code>202</code> with an id; poll with <code>?wait=true</code> for a 55-second long-poll.</p>
+    <div class="code"><span class="c"># 1 · Onboard a brand</span><br/>curl -X POST localhost:3000/api/v1/brands \<br/>&nbsp;&nbsp;-H "x-api-key: $KEY" -H "content-type: application/json" \<br/>&nbsp;&nbsp;-d '{"url": "https://yourbrand.com"}'<br/><br/><span class="c"># 2 · Poll until ready (profile + scraped logo)</span><br/>curl localhost:3000/api/v1/brands/$BRAND_ID -H "x-api-key: $KEY"<br/><br/><span class="c"># 3 · Generate on-brand</span><br/>curl -X POST localhost:3000/api/v1/images/generations \<br/>&nbsp;&nbsp;-H "x-api-key: $KEY" -H "content-type: application/json" \<br/>&nbsp;&nbsp;-d '{"brandSessionId": "$BRAND_ID", "prompt": "Hero image for a spring launch", "aspectRatio": "16:9"}'<br/><br/><span class="c"># 4 · Long-poll the result</span><br/>curl "localhost:3000/api/v1/images/$IMAGE_ID?wait=true" -H "x-api-key: $KEY"</div>
+
+    <h2 id="endpoints">Endpoints</h2>
+    <table>
+      <tr><th>Method · Path</th><th>What it does</th></tr>
+      <tr><td><code>POST /api/v1/brands</code></td><td>Onboard a brand from a URL (scrapes logo + imagery too)</td></tr>
+      <tr><td><code>GET /api/v1/brands</code> · <code>/brands/{id}</code></td><td>List / fetch brands with profile and logoUrl</td></tr>
+      <tr><td><code>PATCH /api/v1/brands/{id}</code></td><td>Update name or merge profile changes</td></tr>
+      <tr><td><code>POST /api/v1/images/generations</code></td><td>Generate (variants, reference images, 1K/2K/4K)</td></tr>
+      <tr><td><code>POST /api/v1/images/{id}/edit</code> · <code>/resize</code></td><td>Natural-language edit · generative recompose</td></tr>
+      <tr><td><code>POST /api/v1/images/{id}/background-removal</code> · <code>/vectorize</code></td><td>Scaffolds (swap in rembg / vtracer)</td></tr>
+      <tr><td><code>POST /api/v1/images/uploads</code></td><td>Import an image by URL</td></tr>
+      <tr><td><code>GET /api/v1/images?q=…</code></td><td>List + plain-English search over prompts</td></tr>
+      <tr><td><code>GET /api/v1/images/{id}?wait=true</code></td><td>Long-poll an image until terminal state</td></tr>
+      <tr><td><code>GET /api/v1/account</code> · <code>/account/credits</code></td><td>Account info · balance + ledger</td></tr>
+    </table>
+    <p>Errors use a stable envelope: <code>{ defined, code, status, message, data }</code> — e.g. <code>BRAND_NOT_FOUND</code> (422), <code>INSUFFICIENT_CREDITS</code> (402, includes <code>action_url</code>).</p>
+
+    <h2 id="mcp">MCP</h2>
+    <p>Streamable HTTP endpoint at <code>POST /api/mcp</code>, authenticated with <code>Authorization: Bearer &lt;key&gt;</code>. Ten tools:</p>
+    <ul>
+      <li><code>bloom_onboard_brand</code>, <code>bloom_get_brand</code>, <code>bloom_list_brands</code>, <code>bloom_update_brand</code></li>
+      <li><code>bloom_generate_image</code>, <code>bloom_edit_image</code>, <code>bloom_resize_image</code>, <code>bloom_get_image</code></li>
+      <li><code>bloom_search_images</code>, <code>bloom_upload_image</code></li>
+    </ul>
+    <div class="code">claude mcp add --transport http crowd http://localhost:3000/api/mcp \<br/>&nbsp;&nbsp;--header "Authorization: Bearer $KEY"</div>
+
+    <h2 id="skill">Agent skill</h2>
+    <p>A packaged skill teaches agents prompting rules, channel aspect ratios, and the full workflow. Download <a href="/skills/brandlayer.skill" style="color:var(--clay-deep);text-decoration:underline">the .skill file</a> and add it in Claude's Skills settings, or read the source at <code>/skills/brandlayer/SKILL.md</code>.</p>
+
+    <h2 id="examples">Templates</h2>
+    <p>Copy-ready integration examples ship in the repo's <code>examples/</code> folder:</p>
+    <ul>
+      <li><b>newsletter-image</b> — a fresh on-brand header for every email send</li>
+      <li><b>social-repurpose</b> — one topic into consistent 16:9 / 1:1 / 9:16 images</li>
+    </ul>
+
+    <h2 id="selfhost">Self-hosting</h2>
+    <p>Node 20+, Postgres, Redis. <code>docker compose up -d</code>, <code>npm install</code>, <code>npm run dev</code> + <code>npm run worker</code>. The schema applies itself on boot. Set <code>GEMINI_API_KEY</code> or <code>OPENAI_API_KEY</code> for real generation (mock provider otherwise), and Clerk keys for auth. See DEPLOY.md for Railway.</p>
+  </div>
+</section>
+
+<footer class="site"><div class="wrap">
+  <div class="cols">
+    <div><a class="wordmark" href="/"><svg viewBox="0 0 32 32" width="24" height="24"><g fill="#D97757"><circle cx="16" cy="10" r="5"/><circle cx="8" cy="20" r="4.2"/><circle cx="24" cy="20" r="4.2"/><circle cx="16" cy="24" r="3.4" fill="#A8552F"/></g></svg> Crowd</a><div class="tag">The brand layer for agents.</div></div>
+    <div><h5>Explore</h5><a class="f" href="/#features">Features</a><a class="f" href="/pricing">Pricing</a><a class="f" href="/brands">Brands</a></div>
+    <div><h5>Docs</h5><a class="f" href="/docs/llms.txt">llms.txt</a><a class="f" href="/api/v1/spec.json">OpenAPI</a></div>
+    <div><h5>Resources</h5><a class="f" href="/skills/brandlayer.skill">Agent skill</a></div>
+  </div>
+  <div class="legal">© 2026 Crowd.</div>
+</div></footer>
+</body>
+</html>

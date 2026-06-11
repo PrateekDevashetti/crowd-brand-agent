@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Brands — Crowd</title>
+<meta name="description" content="One living brand profile per brand: palette, type, tone, logo, imagery rules. Unlimited brands in one workspace." />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/site/site.css" />
+</head>
+<body>
+
+<nav class="site"><div class="wrap bar">
+  <a class="wordmark" href="/"><svg viewBox="0 0 32 32" width="26" height="26"><g fill="#D97757"><circle cx="16" cy="10" r="5"/><circle cx="8" cy="20" r="4.2"/><circle cx="24" cy="20" r="4.2"/><circle cx="16" cy="24" r="3.4" fill="#A8552F"/></g></svg> Crowd</a>
+  <div class="links"><a href="/brands" class="on">Brands</a><a href="/pricing">Pricing</a><a href="/docs">Docs</a><a href="/#mcp">MCP</a></div>
+  <div class="cta"><a class="btn btn-ghost" href="/login">Sign in</a><a class="btn btn-clay" href="/login">Get started</a></div>
+</div></nav>
+
+<header class="page-hero">
+  <div class="wrap">
+    <div class="kicker rv">Brands</div>
+    <h1 class="rv">Your brand, as a system.<br/><span style="color:var(--ink-faint)">Not a PDF.</span></h1>
+    <p class="rv">Most brand guidelines live in a deck nobody opens. Crowd turns yours into structured data that every generation, every teammate, and every agent actually uses.</p>
+  </div>
+</header>
+
+<section class="block" style="padding-top:30px">
+  <div class="wrap">
+    <div class="mcp-box rv" style="grid-template-columns:300px 1fr">
+      <div>
+        <div style="height:180px;border-radius:14px;background:#141413;display:grid;place-items:center">
+          <svg viewBox="0 0 32 32" width="74" height="74"><g fill="#D97757"><circle cx="16" cy="10" r="5"/><circle cx="8" cy="20" r="4.2"/><circle cx="24" cy="20" r="4.2"/><circle cx="16" cy="24" r="3.4" fill="#fff"/></g></svg>
+        </div>
+        <p style="font-size:13px;color:var(--ink-faint);margin-top:12px">Logo scraped automatically on onboarding — apple-touch-icon, og:image, and favicon fallbacks.</p>
+      </div>
+      <div>
+        <h3 style="font-size:24px;margin-bottom:16px">What lives in a brand profile</h3>
+        <div class="doc"><table>
+          <tr><th>Field</th><th>Example</th></tr>
+          <tr><td><code>colors</code></td><td>#D97757 (primary) · #141413 (text) · #FAF9F5 (background)</td></tr>
+          <tr><td><code>fonts</code></td><td>Fraunces (heading) · Instrument Sans (body)</td></tr>
+          <tr><td><code>tone</code></td><td>warm, direct, craft-minded</td></tr>
+          <tr><td><code>styleKeywords</code></td><td>editorial · tactile · generous whitespace</td></tr>
+          <tr><td><code>imageryGuidelines</code></td><td>“Soft natural light, single focal subject, clay accents…”</td></tr>
+          <tr><td><code>doNots</code></td><td>clutter · stock-photo gloss · off-palette gradients</td></tr>
+        </table></div>
+      </div>
+    </div>
+
+    <div class="trio">
+      <div class="card3 rv"><div class="ic">⚡</div><h3>Onboard in seconds</h3><p>Paste a URL. Crowd scrapes the site, distills the visual DNA with an LLM, and imports the logo and imagery — ready in 10–30 seconds.</p></div>
+      <div class="card3 rv"><div class="ic">✎</div><h3>Edit anything</h3><p>Profiles are yours to tune: tweak the palette, sharpen the tone, add do-nots. Every change applies to all future generations.</p></div>
+      <div class="card3 rv"><div class="ic">∞</div><h3>Unlimited brands</h3><p>Agencies run every client in one workspace. Agents pick the brand per request with a session id.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="block" style="background:var(--ivory)">
+  <div class="wrap center">
+    <h2 class="rv">Every prompt inherits the brand.</h2>
+    <p class="rv" style="color:var(--ink-soft);margin:14px auto 0;max-width:540px">You write “Hero image for a spring launch.” Crowd writes the rest — palette, tone, typography, imagery rules — before it ever reaches the image model.</p>
+    <div class="mcp-box rv" style="margin-top:36px;grid-template-columns:1fr 1fr;text-align:left">
+      <div class="code"><span class="c"># you send</span><br/>{"prompt": <span class="clay">"Hero image for a spring launch"</span>,<br/>&nbsp;"brandSessionId": "9f2…"}</div>
+      <div class="code"><span class="c"># the model receives</span><br/>Create an image for the brand <span class="clay">"Acme"</span>…<br/>Palette: <span class="clay">#D97757, #141413…</span><br/>Tone: <span class="clay">warm, direct…</span><br/>Imagery: <span class="clay">soft natural light…</span><br/>REQUEST: Hero image for a spring launch</div>
+    </div>
+  </div>
+</section>
+
+<section class="final">
+  <div class="dots"></div>
+  <div class="wrap" style="position:relative">
+    <h2 class="rv">Onboard your first brand.</h2>
+    <p class="rv">It takes one URL and about twenty seconds.</p>
+    <a class="btn btn-clay btn-lg rv" href="/login">Get started</a>
+  </div>
+</section>
+
+<footer class="site"><div class="wrap">
+  <div class="cols">
+    <div><a class="wordmark" href="/"><svg viewBox="0 0 32 32" width="24" height="24"><g fill="#D97757"><circle cx="16" cy="10" r="5"/><circle cx="8" cy="20" r="4.2"/><circle cx="24" cy="20" r="4.2"/><circle cx="16" cy="24" r="3.4" fill="#A8552F"/></g></svg> Crowd</a><div class="tag">The brand layer for agents.</div></div>
+    <div><h5>Explore</h5><a class="f" href="/#features">Features</a><a class="f" href="/pricing">Pricing</a><a class="f" href="/#mcp">MCP</a></div>
+    <div><h5>Docs</h5><a class="f" href="/docs">API</a><a class="f" href="/docs/llms.txt">llms.txt</a><a class="f" href="/api/v1/spec.json">OpenAPI</a></div>
+    <div><h5>Resources</h5><a class="f" href="/skills/brandlayer.skill">Agent skill</a><a class="f" href="/docs#examples">Templates</a></div>
+  </div>
+  <div class="legal">© 2026 Crowd.</div>
+</div></footer>
+
+<script>
+  const io = new IntersectionObserver((es) => es.forEach((e) => e.isIntersecting && e.target.classList.add("in")), { threshold: 0.12 });
+  document.querySelectorAll(".rv").forEach((el) => io.observe(el));
+</script>
+</body>
+</html>

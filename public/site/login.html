@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Sign in — Crowd</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/site/site.css" />
+<style>
+  .login-wrap { min-height: calc(100vh - 62px); display: grid; place-items: center; position: relative; padding: 40px 20px; }
+  .login-card {
+    position: relative; background: var(--card); border: 1px solid var(--line); border-radius: 22px;
+    box-shadow: var(--shadow); padding: 38px; width: min(420px, 94vw); text-align: center;
+  }
+  .login-card h1 { font-size: 30px; margin: 16px 0 6px; }
+  .login-card .sub { color: var(--ink-soft); font-size: 14.5px; margin-bottom: 26px; }
+  #clerk-mount { min-height: 60px; }
+  .dev-note { margin-top: 18px; font-size: 12.5px; color: var(--ink-faint); line-height: 1.6; }
+  .dev-note code { background: var(--ivory); border-radius: 5px; padding: 1px 6px; }
+  .or { display: flex; align-items: center; gap: 12px; color: var(--ink-faint); font-size: 12px; margin: 18px 0; }
+  .or::before, .or::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+  .keyrow { display: flex; gap: 8px; }
+  .keyrow input { flex: 1; border: 1px solid var(--line); border-radius: 11px; padding: 11px 13px; font: inherit; font-size: 14px; outline: 0; }
+  .keyrow input:focus { border-color: #e3b8a3; }
+</style>
+</head>
+<body>
+
+<nav class="site"><div class="wrap bar">
+  <a class="wordmark" href="/"><svg viewBox="0 0 32 32" width="26" height="26"><g fill="#D97757"><circle cx="16" cy="10" r="5"/><circle cx="8" cy="20" r="4.2"/><circle cx="24" cy="20" r="4.2"/><circle cx="16" cy="24" r="3.4" fill="#A8552F"/></g></svg> Crowd</a>
+  <div class="cta"><a class="btn btn-ghost" href="/">← Back to site</a></div>
+</div></nav>
+
+<div class="login-wrap">
+  <div class="dots"></div>
+  <div class="login-card">
+    <svg viewBox="0 0 32 32" width="44" height="44"><g fill="#D97757"><circle cx="16" cy="10" r="5"/><circle cx="8" cy="20" r="4.2"/><circle cx="24" cy="20" r="4.2"/><circle cx="16" cy="24" r="3.4" fill="#A8552F"/></g></svg>
+    <h1>Welcome to Crowd</h1>
+    <p class="sub" id="login-sub">Sign in to your workspace.</p>
+
+    <div id="clerk-mount"></div>
+
+    <div id="dev-mode" hidden>
+      <button class="btn btn-clay btn-lg" style="width:100%" id="dev-continue">Continue in dev mode</button>
+      <div class="or">or use an API key</div>
+      <div class="keyrow">
+        <input id="api-key" type="password" placeholder="Paste an API key" />
+        <button class="btn btn-ghost" id="key-go">Go</button>
+      </div>
+      <p class="dev-note">Clerk isn't configured yet. Add <code>CLERK_PUBLISHABLE_KEY</code> and <code>CLERK_SECRET_KEY</code> to <code>.env</code> and restart to enable real sign-in. Dev mode uses the local <code>DEV_API_KEY</code>.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+(async () => {
+  const cfg = await fetch("/api/config").then((r) => r.json()).catch(() => ({}));
+
+  if (cfg.clerkPublishableKey) {
+    // Real auth: load Clerk, mount sign-in, bounce to /app once a session exists.
+    document.getElementById("login-sub").textContent = "Sign in or create an account.";
+    const s = document.createElement("script");
+    s.src = "https://cdn.jsdelivr.net/npm/@clerk/clerk-js@5/dist/clerk.browser.js";
+    s.setAttribute("data-clerk-publishable-key", cfg.clerkPublishableKey);
+    s.onload = async () => {
+      await window.Clerk.load();
+      if (window.Clerk.user) { location.href = "/app"; return; }
+      window.Clerk.mountSignIn(document.getElementById("clerk-mount"), {
+        appearance: { variables: { colorPrimary: "#D97757", borderRadius: "12px" } },
+        afterSignInUrl: "/app",
+        afterSignUpUrl: "/app",
+      });
+    };
+    document.head.appendChild(s);
+  } else {
+    document.getElementById("dev-mode").hidden = false;
+    document.getElementById("dev-continue").addEventListener("click", () => {
+      localStorage.setItem("crowd_key", "dev-secret");
+      location.href = "/app";
+    });
+    document.getElementById("key-go").addEventListener("click", () => {
+      const k = document.getElementById("api-key").value.trim();
+      if (!k) return;
+      localStorage.setItem("crowd_key", k);
+      location.href = "/app";
+    });
+  }
+})();
+</script>
+</body>
+</html>

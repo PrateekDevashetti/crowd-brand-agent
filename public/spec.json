@@ -1,0 +1,73 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "BrandLayer API",
+    "version": "0.2.0",
+    "description": "The brand layer for agents: onboard a brand from a URL, then generate, edit, and resize on-brand images. Async operations return 202 with an id; poll with ?wait=true for long-polling. Errors use { defined, code, status, message, data }."
+  },
+  "servers": [{ "url": "http://localhost:3000/api/v1" }],
+  "components": {
+    "securitySchemes": {
+      "apiKey": { "type": "apiKey", "in": "header", "name": "x-api-key" }
+    }
+  },
+  "security": [{ "apiKey": [] }],
+  "paths": {
+    "/brands": {
+      "post": {
+        "summary": "Onboard a brand from a website URL (async; 202)",
+        "requestBody": { "content": { "application/json": { "schema": { "type": "object", "required": ["url"], "properties": { "url": { "type": "string" } } } } } },
+        "responses": { "202": { "description": "Brand created; poll until status=ready" } }
+      },
+      "get": { "summary": "List brands", "responses": { "200": { "description": "Brand list" } } }
+    },
+    "/brands/{id}": {
+      "get": { "summary": "Get a brand (profile, logoUrl, status)", "responses": { "200": { "description": "Brand" } } },
+      "patch": {
+        "summary": "Update brand name/profile (merged into existing profile)",
+        "requestBody": { "content": { "application/json": { "schema": { "type": "object", "properties": { "name": { "type": "string" }, "profile": { "type": "object" } } } } } },
+        "responses": { "200": { "description": "Updated brand" } }
+      }
+    },
+    "/images/generations": {
+      "post": {
+        "summary": "Generate on-brand images (async; 202)",
+        "requestBody": { "content": { "application/json": { "schema": { "type": "object", "required": ["prompt"], "properties": {
+          "brandSessionId": { "type": "string" },
+          "prompt": { "type": "string" },
+          "aspectRatio": { "type": "string", "default": "1:1" },
+          "resolution": { "type": "string", "enum": ["1K", "2K", "4K"], "default": "2K" },
+          "variants": { "type": "integer", "minimum": 1, "maximum": 4 },
+          "referenceImageIds": { "type": "array", "items": { "type": "string" } }
+        } } } } },
+        "responses": { "202": { "description": "{ ids, status: pending }" }, "402": { "description": "INSUFFICIENT_CREDITS" } }
+      }
+    },
+    "/images/{id}/edit": { "post": { "summary": "Edit an image with a natural-language instruction (async; 202)", "responses": { "202": { "description": "New image id" } } } },
+    "/images/{id}/resize": { "post": { "summary": "Generative resize to a new aspect ratio (async; 202)", "responses": { "202": { "description": "New image id" } } } },
+    "/images/{id}/background-removal": { "post": { "summary": "Remove background (scaffold)", "responses": { "202": { "description": "New image id" } } } },
+    "/images/{id}/vectorize": { "post": { "summary": "Vectorize to SVG (scaffold)", "responses": { "202": { "description": "New image id" } } } },
+    "/images/uploads": { "post": { "summary": "Import an image by URL", "responses": { "202": { "description": "New image id" } } } },
+    "/images": {
+      "get": {
+        "summary": "List/search images",
+        "parameters": [
+          { "name": "brandSessionId", "in": "query", "schema": { "type": "string" } },
+          { "name": "status", "in": "query", "schema": { "type": "string" } },
+          { "name": "q", "in": "query", "schema": { "type": "string" }, "description": "Plain-English search over prompts" },
+          { "name": "limit", "in": "query", "schema": { "type": "integer" } }
+        ],
+        "responses": { "200": { "description": "Image list" } }
+      }
+    },
+    "/images/{id}": {
+      "get": {
+        "summary": "Get an image; ?wait=true long-polls up to 55s",
+        "parameters": [{ "name": "wait", "in": "query", "schema": { "type": "boolean" } }],
+        "responses": { "200": { "description": "Image with imageUrl when completed" } }
+      }
+    },
+    "/account": { "get": { "summary": "Account info", "responses": { "200": { "description": "Account" } } } },
+    "/account/credits": { "get": { "summary": "Credit balance + ledger", "responses": { "200": { "description": "Credits" } } } }
+  }
+}

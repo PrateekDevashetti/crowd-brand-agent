@@ -1,0 +1,865 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Crowd</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --ink: #141413; --ink-soft: #6e6b64; --ink-faint: #a8a49a;
+    --accent: #D97757; --accent-deep: #A8552F; --accent-wash: #F7ECE5;
+    --line: #e8e3d9; --card: #fff; --bg: #FAF9F5; --rail: #F4F1EA;
+    --ok: #1a9e6c; --bad: #d23f3f;
+    --radius: 16px;
+    --shadow: 0 1px 2px rgba(22,18,31,.04), 0 8px 28px rgba(76,29,149,.07);
+    --font-display: "Fraunces", Georgia, serif;
+    --font-body: "Instrument Sans", -apple-system, sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body { font-family: var(--font-body); color: var(--ink); background: var(--bg); -webkit-font-smoothing: antialiased; }
+  button { font: inherit; cursor: pointer; }
+  h1, h2, h3 { font-family: var(--font-display); font-weight: 500; letter-spacing: -.02em; }
+
+  /* ============ ONBOARDING (overlay) ============ */
+  #onboard {
+    position: fixed; inset: 0; z-index: 30; background: var(--bg);
+    display: none; flex-direction: column; overflow-y: auto;
+  }
+  #onboard.active { display: flex; }
+  #onboard::after {
+    content: ""; position: fixed; inset: 0; pointer-events: none;
+    background-image: radial-gradient(rgba(217,119,87,.18) 1.2px, transparent 1.2px);
+    background-size: 14px 14px;
+    -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,.9), transparent 55%);
+            mask-image: linear-gradient(to top, rgba(0,0,0,.9), transparent 55%);
+  }
+  .ob-head { display: flex; align-items: center; justify-content: space-between; padding: 18px 28px; position: relative; z-index: 1; }
+  .wordmark { font-family: var(--font-display); font-weight: 600; font-size: 21px; }
+  .wordmark em { font-style: normal; color: var(--accent); }
+  .ob-body { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 24px; position: relative; z-index: 1; }
+  .ob-view { display: none; flex-direction: column; align-items: center; width: 100%; }
+  .ob-view.active { display: flex; }
+  .bloom-mark { width: 50px; height: 50px; margin-bottom: 16px; animation: pop .5s cubic-bezier(.2,1.4,.4,1); }
+  .hero { font-size: clamp(36px, 5vw, 52px); text-align: center; }
+  .hero-sub { margin-top: 12px; color: var(--ink-soft); text-align: center; line-height: 1.55; font-size: 15.5px; }
+  .url-bar {
+    margin-top: 30px; width: min(560px, 92vw); display: flex; align-items: center; gap: 8px;
+    background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+    padding: 8px 8px 8px 18px; box-shadow: var(--shadow); transition: all .2s;
+  }
+  .url-bar:focus-within { border-color: #e3b8a3; box-shadow: 0 0 0 4px rgba(217,119,87,.10), var(--shadow); }
+  .url-bar input { flex: 1; border: 0; outline: 0; font: inherit; font-size: 16px; background: transparent; }
+  .url-bar input::placeholder { color: var(--ink-faint); }
+  .go-btn { width: 44px; height: 40px; border: 0; border-radius: 12px; background: var(--accent); color: #fff; font-size: 18px; display: grid; place-items: center; transition: background .15s; }
+  .go-btn:hover { background: var(--accent-deep); }
+  .go-btn[disabled] { background: #ecc4b1; }
+  .add-error { margin-top: 14px; color: var(--bad); font-size: 14px; min-height: 18px; text-align: center; }
+  .skip-link { margin-top: 26px; }
+
+  .extract-grid { display: grid; gap: 16px; width: min(1080px, 96vw); grid-template-columns: 340px 1fr; }
+  @media (max-width: 860px) { .extract-grid { grid-template-columns: 1fr; } }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 24px; }
+  .steps-card h2 { font-size: 29px; line-height: 1.15; }
+  .steps-card .sub { color: var(--ink-soft); font-size: 14px; margin: 10px 0 24px; }
+  .step { display: flex; align-items: center; gap: 13px; padding: 9px 0; position: relative; }
+  .step + .step::before { content: ""; position: absolute; left: 11px; top: -8px; height: 14px; width: 1.5px; background: var(--line); }
+  .step .bullet { width: 23px; height: 23px; border-radius: 50%; border: 1.5px solid var(--line); display: grid; place-items: center; font-size: 11px; color: #fff; flex: none; transition: all .25s; }
+  .step.doing .bullet { border-color: var(--accent); }
+  .step.doing .bullet::after { content: ""; width: 11px; height: 11px; border-radius: 50%; border: 2px solid var(--accent); border-top-color: transparent; animation: spin .8s linear infinite; }
+  .step.done .bullet { background: var(--accent); border-color: var(--accent); }
+  .step.done .bullet::after { content: "✓"; }
+  .step span { font-size: 14.5px; color: var(--ink-soft); }
+  .step.doing span, .step.done span { color: var(--ink); }
+  .eta { margin-top: 20px; color: var(--ink-faint); font-size: 13.5px; }
+  .facts { display: grid; gap: 16px; grid-template-columns: 1fr 1fr; align-content: start; }
+  @media (max-width: 640px) { .facts { grid-template-columns: 1fr; } }
+  .fact { opacity: 0; transform: translateY(10px); transition: all .5s; }
+  .fact.show { opacity: 1; transform: none; }
+  .fact h4 { font-family: var(--font-display); font-weight: 500; font-size: 19px; color: var(--ink-faint); margin-bottom: 12px; }
+  .fact .body { font-size: 14.5px; line-height: 1.6; }
+  .fact.span2 { grid-column: span 2; }
+  @media (max-width: 640px) { .fact.span2 { grid-column: span 1; } }
+  .logo-tile { height: 150px; border-radius: 14px; display: grid; place-items: center; font-family: var(--font-display); font-size: 54px; font-weight: 600; color: #fff; overflow: hidden; }
+  .logo-tile img { width: 100%; height: 100%; object-fit: contain; padding: 18px; }
+  .palette { display: flex; gap: 10px; flex-wrap: wrap; }
+  .chip { display: flex; flex-direction: column; gap: 6px; align-items: center; }
+  .chip i { width: 42px; height: 42px; border-radius: 12px; border: 1px solid rgba(0,0,0,.07); }
+  .chip small { font-size: 11px; color: var(--ink-faint); }
+  .tags { display: flex; gap: 7px; flex-wrap: wrap; }
+  .tag { background: var(--accent-wash); color: var(--accent-deep); border-radius: 999px; padding: 5px 12px; font-size: 12.5px; font-weight: 500; }
+  .begin-btn { margin-top: 24px; width: 100%; padding: 13px; border: 0; border-radius: 12px; background: var(--accent); color: #fff; font-weight: 600; font-size: 15px; display: none; transition: background .15s; }
+  .begin-btn:hover { background: var(--accent-deep); }
+
+  /* ============ APP SHELL ============ */
+  #shell { display: none; height: 100vh; }
+  #shell.active { display: flex; }
+  aside {
+    width: 218px; flex: none; background: var(--rail); border-right: 1px solid var(--line);
+    display: flex; flex-direction: column; padding: 16px 12px;
+  }
+  aside .wordmark { padding: 4px 10px 16px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 11px; width: 100%;
+    border: 0; background: none; border-radius: 10px; padding: 9px 11px;
+    font-size: 14px; font-weight: 500; color: var(--ink-soft); text-align: left;
+    transition: all .12s;
+  }
+  .nav-item svg { width: 17px; height: 17px; flex: none; }
+  .nav-item:hover { background: #ece7dd; color: var(--ink); }
+  .nav-item.on { background: var(--accent-wash); color: var(--accent-deep); }
+  aside .foot { margin-top: auto; padding: 10px; font-size: 12.5px; color: var(--ink-faint); line-height: 1.7; }
+  aside .foot b { color: var(--ink-soft); }
+
+  .main { flex: 1; overflow-y: auto; position: relative; }
+  .topbar {
+    position: sticky; top: 0; z-index: 5; background: rgba(253,252,251,.85); backdrop-filter: blur(8px);
+    display: flex; align-items: center; gap: 12px; padding: 13px 30px; border-bottom: 1px solid var(--line);
+  }
+  .brand-select {
+    display: flex; align-items: center; gap: 9px; background: var(--card); border: 1px solid var(--line);
+    border-radius: 11px; padding: 7px 12px; font-size: 14px; font-weight: 500; max-width: 280px;
+  }
+  .brand-select:hover { border-color: #e3b8a3; }
+  .brand-select .mono { width: 22px; height: 22px; border-radius: 7px; display: grid; place-items: center; color: #fff; font-family: var(--font-display); font-weight: 600; font-size: 12px; overflow: hidden; flex: none; }
+  .brand-select .mono img { width: 100%; height: 100%; object-fit: cover; }
+  .brand-select .car { color: var(--ink-faint); font-size: 11px; }
+  .brand-menu {
+    position: absolute; top: 54px; left: 30px; z-index: 20; min-width: 260px;
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 16px 48px rgba(0,0,0,.14);
+    padding: 6px; display: none;
+  }
+  .brand-menu.open { display: block; }
+  .brand-menu button { display: flex; align-items: center; gap: 10px; width: 100%; border: 0; background: none; border-radius: 9px; padding: 9px 10px; font-size: 14px; text-align: left; }
+  .brand-menu button:hover { background: var(--accent-wash); }
+  .topbar .credits-pill { margin-left: auto; font-size: 13px; color: var(--ink-soft); background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 6px 13px; }
+  .topbar .credits-pill b { color: var(--ink); }
+
+  .page { display: none; padding: 30px 30px 170px; max-width: 1240px; }
+  .page.on { display: block; }
+  .page > h1 { font-size: 36px; }
+  .page > .lede { color: var(--ink-soft); font-size: 15px; margin: 8px 0 28px; }
+
+  /* ---- overview ---- */
+  .ov-grid { display: grid; gap: 18px; grid-template-columns: 1.2fr 1fr; }
+  @media (max-width: 980px) { .ov-grid { grid-template-columns: 1fr; } }
+  .ov-brand { display: flex; flex-direction: column; }
+  .ov-logo { height: 190px; border-radius: 13px; display: grid; place-items: center; overflow: hidden; font-family: var(--font-display); font-size: 60px; color: #fff; }
+  .ov-logo img { width: 100%; height: 100%; object-fit: contain; padding: 22px; }
+  .ov-brand .row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 16px; }
+  .kicker { font-size: 11.5px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); display: flex; align-items: center; gap: 7px; }
+  .ov-brand h3 { font-size: 24px; margin-top: 5px; }
+  .linklike { background: none; border: 0; color: var(--accent); font-size: 13.5px; text-decoration: underline; text-underline-offset: 3px; }
+  .ov-create { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 8px; min-height: 240px; }
+  .ov-swatch-row { display: flex; gap: 8px; margin-bottom: 10px; }
+  .ov-swatch-row i { width: 52px; height: 64px; border-radius: 10px; border: 1px solid rgba(0,0,0,.06); }
+  .ov-create h3 { font-size: 24px; }
+  .ov-recent { grid-column: 1 / -1; }
+  .ov-recent h3 { font-size: 20px; margin-bottom: 14px; }
+  .thumb-strip { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; }
+  .thumb-strip img { width: 130px; height: 96px; object-fit: cover; border-radius: 11px; border: 1px solid var(--line); cursor: zoom-in; flex: none; }
+
+  /* ---- gallery / uploads ---- */
+  .grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(228px, 1fr)); }
+  .tile { background: var(--card); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; box-shadow: var(--shadow); animation: rise .35s ease both; }
+  .tile .ph { aspect-ratio: 4/3; display: grid; place-items: center; background: linear-gradient(110deg, #f4f0e8 30%, #ede5d8 45%, #f4f0e8 60%); background-size: 220% 100%; animation: shimmer 1.4s linear infinite; color: var(--ink-faint); font-size: 13px; }
+  .tile img { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; cursor: zoom-in; background: #f4f1fa; }
+  .tile .meta { padding: 10px 12px 4px; }
+  .tile .kind { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-faint); }
+  .tile .p { font-size: 13px; margin-top: 3px; line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .tile .acts { display: flex; gap: 6px; padding: 9px 12px 12px; }
+  .act { flex: 1; border: 1px solid var(--line); background: var(--bg); border-radius: 8px; font-size: 12.5px; padding: 6px 0; color: var(--ink-soft); transition: all .15s; text-align: center; text-decoration: none; }
+  .act:hover { border-color: var(--accent); color: var(--accent-deep); }
+  .tile .failed { color: var(--bad); font-size: 12.5px; padding: 6px 12px 12px; }
+  .empty { color: var(--ink-faint); font-size: 14px; padding: 40px 0; text-align: center; border: 1.5px dashed var(--line); border-radius: 14px; }
+  .filter-row { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
+  .fbtn { border: 1px solid var(--line); background: var(--card); border-radius: 999px; padding: 6px 14px; font-size: 13px; color: var(--ink-soft); }
+  .fbtn.sel { border-color: var(--accent); background: var(--accent-wash); color: var(--accent-deep); font-weight: 600; }
+
+  /* ---- ideas ---- */
+  .idea-section { margin-bottom: 30px; }
+  .idea-section h3 { font-size: 19px; display: flex; align-items: center; gap: 9px; margin-bottom: 13px; }
+  .idea-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)); }
+  .idea {
+    background: var(--card); border: 1px solid var(--line); border-radius: 13px; padding: 16px;
+    text-align: left; transition: all .14s;
+  }
+  .idea:hover { border-color: #e3b8a3; transform: translateY(-2px); box-shadow: var(--shadow); }
+  .idea .ic { width: 34px; height: 34px; border-radius: 9px; background: var(--accent-wash); display: grid; place-items: center; font-size: 16px; margin-bottom: 11px; }
+  .idea b { font-size: 14.5px; display: block; }
+  .idea p { font-size: 12.5px; color: var(--ink-soft); margin-top: 4px; line-height: 1.5; }
+
+  /* ---- brand page ---- */
+  .brand-cards { display: grid; gap: 18px; max-width: 860px; margin: 0 auto; }
+  .brand-cards h3 { font-size: 22px; color: var(--ink-faint); margin-bottom: 18px; }
+  .ident { display: grid; gap: 22px; grid-template-columns: 240px 1fr; align-items: start; }
+  @media (max-width: 700px) { .ident { grid-template-columns: 1fr; } }
+  .ident .logo-tile { height: 200px; }
+  .ident .host { font-weight: 600; font-size: 16px; }
+  .ident .desc { color: var(--ink-soft); font-size: 14.5px; line-height: 1.65; margin-top: 8px; }
+  .ident .tg-label { font-weight: 600; font-size: 14px; margin-top: 16px; }
+  .ident .tg { color: var(--ink-soft); font-size: 14.5px; margin-top: 5px; font-style: italic; }
+  .dl-grid { display: grid; gap: 26px; grid-template-columns: 1fr 1fr; }
+  @media (max-width: 700px) { .dl-grid { grid-template-columns: 1fr; } }
+  .dl-grid h5 { font-size: 13.5px; font-weight: 600; margin-bottom: 10px; }
+  .swatches { display: flex; gap: 9px; flex-wrap: wrap; }
+  .swatches i { width: 36px; height: 36px; border-radius: 9px; border: 1px solid rgba(0,0,0,.07); }
+  .font-tiles { display: flex; gap: 10px; flex-wrap: wrap; }
+  .font-tile { border: 1px solid var(--line); border-radius: 11px; padding: 14px 18px; min-width: 130px; }
+  .font-tile .aa { font-size: 21px; }
+  .font-tile small { color: var(--ink-faint); font-size: 12px; display: block; margin-top: 5px; }
+  .aesthetic { color: var(--ink-soft); font-size: 14px; line-height: 1.65; }
+
+  /* ---- uploads ---- */
+  .upload-bar { display: flex; gap: 8px; margin-bottom: 20px; max-width: 620px; }
+  .upload-bar input { flex: 1; border: 1px solid var(--line); border-radius: 11px; padding: 11px 14px; font: inherit; font-size: 14.5px; outline: 0; background: var(--card); }
+  .upload-bar input:focus { border-color: #e3b8a3; }
+  .btn-solid { border: 0; background: var(--accent); color: #fff; border-radius: 11px; padding: 10px 18px; font-weight: 600; font-size: 14px; transition: background .15s; }
+  .btn-solid:hover { background: var(--accent-deep); }
+  .btn-ghost { border: 1px solid var(--line); background: var(--card); border-radius: 11px; padding: 9px 16px; font-size: 14px; }
+
+  /* ---- floating create bar ---- */
+  .create-dock {
+    position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%);
+    width: min(620px, calc(100vw - 260px)); z-index: 15; display: none;
+  }
+  .create-dock.on { display: block; }
+  .dock-chips { display: flex; gap: 7px; margin-bottom: 8px; justify-content: center; flex-wrap: wrap; }
+  .dchip { background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 7px 14px; font-size: 13px; font-weight: 500; box-shadow: var(--shadow); transition: all .14s; }
+  .dchip:hover { border-color: var(--accent); color: var(--accent-deep); }
+  .dock {
+    background: var(--card); border: 1px solid var(--line); border-radius: 18px;
+    box-shadow: 0 18px 50px rgba(22,18,31,.16); padding: 13px 14px 11px;
+  }
+  .dock textarea { width: 100%; border: 0; outline: 0; resize: none; font: inherit; font-size: 14.5px; min-height: 44px; background: transparent; }
+  .dock .row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+  .dock select { border: 1px solid var(--line); border-radius: 9px; padding: 6px 8px; font: inherit; font-size: 13px; color: var(--ink-soft); background: var(--bg); outline: 0; }
+  .dock .row .btn-solid { margin-left: auto; padding: 9px 22px; border-radius: 10px; }
+  .dock-note { text-align: center; font-size: 12.5px; color: var(--ink-faint); margin-top: 7px; min-height: 16px; }
+
+  /* ---- modals ---- */
+  .veil { position: fixed; inset: 0; background: rgba(22,18,31,.45); z-index: 40; display: none; align-items: center; justify-content: center; padding: 24px; }
+  .veil.open { display: flex; }
+  .modal { background: var(--card); border-radius: var(--radius); box-shadow: 0 24px 80px rgba(0,0,0,.25); padding: 24px; width: min(460px, 94vw); animation: pop .35s cubic-bezier(.2,1.3,.4,1); }
+  .modal h3 { font-size: 22px; margin-bottom: 14px; }
+  .modal textarea { width: 100%; min-height: 76px; border: 1px solid var(--line); border-radius: 10px; padding: 11px 13px; font: inherit; font-size: 14.5px; outline: 0; }
+  .modal .mrow { display: flex; gap: 8px; margin-top: 16px; justify-content: flex-end; }
+  .ratio-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .ratio { border: 1px solid var(--line); background: var(--card); border-radius: 10px; padding: 7px 13px; font-size: 13.5px; color: var(--ink-soft); transition: all .15s; }
+  .ratio.sel { border-color: var(--accent); color: var(--accent-deep); background: var(--accent-wash); font-weight: 600; }
+  .lightbox img { max-width: 90vw; max-height: 84vh; border-radius: 14px; box-shadow: 0 24px 80px rgba(0,0,0,.4); }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes shimmer { to { background-position: -220% 0; } }
+  @keyframes pop { from { opacity: 0; transform: scale(.92); } to { opacity: 1; transform: scale(1); } }
+  @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+</style>
+</head>
+<body>
+
+<!-- ============ ONBOARDING ============ -->
+<div id="onboard">
+  <div class="ob-head">
+    <div class="wordmark"><svg viewBox="0 0 32 32" width="24" height="24" style="vertical-align:-5px;margin-right:6px"><g fill="#D97757"><circle cx="16" cy="10" r="5"/><circle cx="8" cy="20" r="4.2"/><circle cx="24" cy="20" r="4.2"/><circle cx="16" cy="24" r="3.4" fill="#A8552F"/></g></svg>Crowd</div>
+    <button class="linklike" id="ob-close" hidden>back to dashboard</button>
+  </div>
+  <div class="ob-body">
+    <div class="ob-view active" id="ob-add">
+      <svg class="bloom-mark" viewBox="0 0 32 32"><g fill="#D97757"><circle cx="16" cy="10" r="5"/><circle cx="8" cy="20" r="4.2"/><circle cx="24" cy="20" r="4.2"/><circle cx="16" cy="24" r="3.4" fill="#A8552F"/></g></svg>
+      <h1 class="hero">Add your brand</h1>
+      <p class="hero-sub">Paste a website, and Crowd learns its logo, colors,<br/>type, and tone — then everything you make is on-brand.</p>
+      <form class="url-bar" id="add-form">
+        <input id="url-input" type="text" placeholder="yourbrand.com" autocomplete="off" spellcheck="false" />
+        <button class="go-btn" type="submit" id="go-btn" aria-label="Add brand">↑</button>
+      </form>
+      <div class="add-error" id="add-error"></div>
+    </div>
+    <div class="ob-view" id="ob-extract">
+      <div class="extract-grid">
+        <div class="card steps-card">
+          <h2 id="extract-title">Extracting brand identity</h2>
+          <p class="sub" id="extract-sub">This is a one-time setup for your brand</p>
+          <div id="steps">
+            <div class="step"><div class="bullet"></div><span>Understanding the brand</span></div>
+            <div class="step"><div class="bullet"></div><span>Collecting logo &amp; imagery</span></div>
+            <div class="step"><div class="bullet"></div><span>Capturing the color palette</span></div>
+            <div class="step"><div class="bullet"></div><span>Learning the aesthetics</span></div>
+            <div class="step"><div class="bullet"></div><span>Putting everything together</span></div>
+          </div>
+          <p class="eta" id="eta">About 20 seconds remaining</p>
+          <button class="begin-btn" id="begin-btn">Let’s Begin</button>
+        </div>
+        <div class="facts" id="facts"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ APP SHELL ============ -->
+<div id="shell">
+  <aside>
+    <div class="wordmark"><svg viewBox="0 0 32 32" width="24" height="24" style="vertical-align:-5px;margin-right:6px"><g fill="#D97757"><circle cx="16" cy="10" r="5"/><circle cx="8" cy="20" r="4.2"/><circle cx="24" cy="20" r="4.2"/><circle cx="16" cy="24" r="3.4" fill="#A8552F"/></g></svg>Crowd</div>
+    <button class="nav-item on" data-page="overview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11.5 12 4l9 7.5M5.5 9.8V20h13V9.8"/></svg>Overview</button>
+    <button class="nav-item" data-page="images"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="5" width="17" height="14" rx="2.5"/><circle cx="9" cy="10" r="1.6"/><path d="m5 17 4.5-4 3.5 3 2.5-2 3.5 3"/></svg>Images</button>
+    <button class="nav-item" data-page="ideas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9.5 18h5M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.8.6 1.2 1.3 1.3 2.1h4.4c.1-.8.5-1.5 1.3-2.1A6 6 0 0 0 12 3Z"/></svg>Ideas</button>
+    <button class="nav-item" data-page="uploads"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V5m0 0 -4 4m4-4 4 4M4.5 16.5V19a1.5 1.5 0 0 0 1.5 1.5h12a1.5 1.5 0 0 0 1.5-1.5v-2.5"/></svg>Uploads</button>
+    <button class="nav-item" data-page="brand"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3.5c-4.7 0-8.5 3.8-8.5 8.5 0 4.7 3.8 8.5 8.5 8.5 1.2 0 2-.9 2-2 0-.5-.2-1-.5-1.4-.3-.4-.5-.8-.5-1.3 0-1.1.9-2 2-2h2.4c2 0 3.6-1.6 3.6-3.6 0-3.8-3.9-6.7-9-6.7Z"/><circle cx="8" cy="10" r="1.1" fill="currentColor"/><circle cx="12" cy="7.6" r="1.1" fill="currentColor"/><circle cx="16" cy="10" r="1.1" fill="currentColor"/></svg>Brand</button>
+    <div class="foot">
+      <div><b>MCP</b> · POST /api/mcp</div>
+      <div>REST · /api/v1</div>
+      <div style="margin-top:8px"><button class="linklike" onclick="crowdSignOut()" style="font-size:12.5px">Sign out</button></div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <button class="brand-select" id="brand-select"></button>
+      <div class="brand-menu" id="brand-menu"></div>
+      <div class="credits-pill" id="credits">credits: <b>—</b></div>
+    </div>
+
+    <!-- OVERVIEW -->
+    <section class="page on" id="page-overview">
+      <h1>Get Started</h1>
+      <p class="lede">Discover what you can create with your brand</p>
+      <div class="ov-grid">
+        <div class="card ov-brand">
+          <div class="ov-logo" id="ov-logo"></div>
+          <div class="row">
+            <div>
+              <div class="kicker"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3.5c-4.7 0-8.5 3.8-8.5 8.5 0 4.7 3.8 8.5 8.5 8.5"/></svg> Brand</div>
+              <h3 id="ov-name"></h3>
+            </div>
+            <div class="tags" id="ov-tags" style="justify-content:flex-end;max-width:46%"></div>
+          </div>
+          <div style="margin-top:10px"><button class="linklike" data-goto="brand">See details →</button></div>
+        </div>
+        <div class="card ov-create">
+          <div class="ov-swatch-row" id="ov-swatches"></div>
+          <h3>Create your own image</h3>
+          <button class="linklike" data-goto="images">Try a custom prompt →</button>
+        </div>
+        <div class="card ov-recent">
+          <h3>Recent images</h3>
+          <div class="thumb-strip" id="ov-thumbs"></div>
+          <div class="empty" id="ov-thumbs-empty" hidden>No images yet — open <b>Ideas</b> for one-click starting points.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- IMAGES -->
+    <section class="page" id="page-images">
+      <h1>Images</h1>
+      <p class="lede">Everything generated or imported for this brand</p>
+      <div class="upload-bar" style="margin-bottom:14px">
+        <input id="img-search" type="search" placeholder="Search in plain English — e.g. spring launch hero" />
+      </div>
+      <div class="filter-row" id="img-filters">
+        <button class="fbtn sel" data-f="">All</button>
+        <button class="fbtn" data-f="generation">Generated</button>
+        <button class="fbtn" data-f="edit">Edits</button>
+        <button class="fbtn" data-f="resize">Resizes</button>
+        <button class="fbtn" data-f="upload">Imported</button>
+      </div>
+      <div class="grid" id="img-grid"></div>
+      <div class="empty" id="img-empty" hidden>Nothing yet — describe an image in the bar below and hit Create.</div>
+    </section>
+
+    <!-- IDEAS -->
+    <section class="page" id="page-ideas">
+      <h1>Ideas</h1>
+      <p class="lede">Pick a starting point — one click drops it into the create bar, on-brand</p>
+      <div id="idea-sections"></div>
+    </section>
+
+    <!-- UPLOADS -->
+    <section class="page" id="page-uploads">
+      <h1>Uploads</h1>
+      <p class="lede">Import images by URL — scraped site assets land here too</p>
+      <div class="upload-bar">
+        <input id="upload-url" type="text" placeholder="https://example.com/image.png" spellcheck="false" />
+        <button class="btn-solid" id="upload-btn">Import</button>
+      </div>
+      <div class="grid" id="up-grid"></div>
+      <div class="empty" id="up-empty" hidden>No uploads yet.</div>
+    </section>
+
+    <!-- BRAND -->
+    <section class="page" id="page-brand">
+      <div class="brand-cards">
+        <div class="card">
+          <h3>Identity</h3>
+          <div class="ident">
+            <div class="logo-tile" id="b-logo"></div>
+            <div>
+              <div class="host" id="b-host"></div>
+              <div class="desc" id="b-desc"></div>
+              <div class="tg-label">Tagline</div>
+              <div class="tg" id="b-tagline"></div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Design Language</h3>
+          <div class="dl-grid">
+            <div>
+              <h5>Colors</h5>
+              <div class="swatches" id="b-colors"></div>
+              <h5 style="margin-top:22px">Fonts</h5>
+              <div class="font-tiles" id="b-fonts"></div>
+            </div>
+            <div>
+              <h5>Tone</h5>
+              <div class="tags" id="b-tone"></div>
+              <h5 style="margin-top:22px">Aesthetic</h5>
+              <div class="aesthetic" id="b-aesthetic"></div>
+            </div>
+          </div>
+        </div>
+        <div style="text-align:center"><button class="linklike" id="add-brand-2">+ Onboard another brand</button></div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- floating create bar -->
+<div class="create-dock" id="dock">
+  <div class="dock-chips" id="dock-chips"></div>
+  <div class="dock">
+    <textarea id="dock-prompt" placeholder="Ad creative, product shot, social post…" rows="2"></textarea>
+    <div class="row">
+      <select id="dock-ratio">
+        <option value="1:1">1:1</option><option value="16:9">16:9</option><option value="9:16">9:16</option>
+        <option value="4:3">4:3</option><option value="3:4">3:4</option>
+      </select>
+      <select id="dock-res"><option value="2K">2K</option><option value="4K">4K</option></select>
+      <select id="dock-n"><option value="1">1x</option><option value="2">2x</option><option value="3">3x</option><option value="4">4x</option></select>
+      <button class="btn-solid" id="dock-go">Create</button>
+    </div>
+  </div>
+  <div class="dock-note" id="dock-note"></div>
+</div>
+
+<!-- modals -->
+<div class="veil" id="edit-veil"><div class="modal">
+  <h3>Edit this image</h3>
+  <textarea id="edit-prompt" placeholder="e.g. make the background darker, add subtle texture"></textarea>
+  <div class="mrow"><button class="btn-ghost" data-close>Cancel</button><button class="btn-solid" id="edit-go">Apply edit</button></div>
+</div></div>
+<div class="veil" id="resize-veil"><div class="modal">
+  <h3>Resize / recompose</h3>
+  <div class="ratio-row" id="resize-ratios">
+    <button class="ratio sel" data-r="1:1">1:1</button><button class="ratio" data-r="16:9">16:9</button>
+    <button class="ratio" data-r="9:16">9:16</button><button class="ratio" data-r="4:3">4:3</button><button class="ratio" data-r="3:4">3:4</button>
+  </div>
+  <div class="mrow"><button class="btn-ghost" data-close>Cancel</button><button class="btn-solid" id="resize-go">Resize</button></div>
+</div></div>
+<div class="veil lightbox" id="lightbox"><img id="lightbox-img" alt="" /></div>
+
+<script>
+(() => {
+  const $ = (s) => document.querySelector(s);
+  const $$ = (s) => [...document.querySelectorAll(s)];
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+
+  /* ---- auth: stored API key (dev mode) or Clerk session token ---- */
+  let clerkActive = false;
+  const authHeaders = async () => {
+    if (clerkActive && window.Clerk?.session) {
+      return { authorization: "Bearer " + (await window.Clerk.session.getToken()), "content-type": "application/json" };
+    }
+    return { "x-api-key": localStorage.getItem("crowd_key") || "dev-secret", "content-type": "application/json" };
+  };
+  async function initAuth() {
+    const cfg = await fetch("/api/config").then((r) => r.json()).catch(() => ({}));
+    if (!cfg.clerkPublishableKey) return; // dev mode
+    if (localStorage.getItem("crowd_key")) return; // explicit API key wins
+    await new Promise((resolve) => {
+      const s = document.createElement("script");
+      s.src = "https://cdn.jsdelivr.net/npm/@clerk/clerk-js@5/dist/clerk.browser.js";
+      s.setAttribute("data-clerk-publishable-key", cfg.clerkPublishableKey);
+      s.onload = resolve; s.onerror = resolve;
+      document.head.appendChild(s);
+    });
+    if (window.Clerk) {
+      await window.Clerk.load();
+      if (!window.Clerk.user) { location.href = "/login"; return; }
+      clerkActive = true;
+    }
+  }
+  window.crowdSignOut = async () => {
+    localStorage.removeItem("crowd_key");
+    if (clerkActive && window.Clerk) await window.Clerk.signOut();
+    location.href = "/login";
+  };
+
+  const api = async (path, opts = {}) => {
+    const res = await fetch("/api/v1" + path, { headers: await authHeaders(), ...opts });
+    const j = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(j.message || ("HTTP " + res.status));
+    return j.data;
+  };
+
+  let brands = [];
+  let brand = null;
+  let imgFilter = "";
+  let targetImage = null;
+  let pollTimer = null;
+  const primary = (b) => b?.profile?.colors?.[0]?.hex || "#D97757";
+  const hostOf = (u) => { try { return new URL(u).hostname; } catch { return u; } };
+
+  /* ================= templates (Ideas) ================= */
+  const IDEAS = [
+    { cat: "Social Media", icon: "#", items: [
+      ["LinkedIn Post", "Professional insight card for your feed", "LinkedIn post graphic sharing a professional insight, clean layout with short headline", "1:1"],
+      ["Instagram Story", "Quick vertical visual for stories and reels", "Instagram story background, bold vertical composition with space for text overlay", "9:16"],
+      ["Twitter/X Post", "Shareable visual for posts and threads", "social post image with a punchy headline area, simple and bold", "16:9"],
+      ["YouTube Thumbnail", "Click-worthy preview image for videos", "YouTube thumbnail, high contrast, large focal subject, space for title text", "16:9"],
+      ["Facebook Post", "Engaging feed visual", "social feed image, friendly and inviting, single clear subject", "1:1"],
+      ["Pinterest Pin", "Tall pin that drives saves", "tall pin graphic, elegant vertical layout with headline space", "9:16"],
+    ]},
+    { cat: "Advertising", icon: "📣", items: [
+      ["Display Ad", "Banner for websites and app placements", "display ad banner, strong call-to-action area, product-forward", "16:9"],
+      ["Social Media Ad", "Paid campaign creative that converts", "paid social ad creative, eye-catching, bold offer headline space", "1:1"],
+      ["Promo Banner", "Highlight deals and limited-time offers", "promotional banner announcing a limited-time offer, urgent but tasteful", "16:9"],
+      ["Sale Event", "Seasonal sale visual", "seasonal sale event graphic, festive but on-brand, big discount focal point", "1:1"],
+      ["Billboard", "Large-format outdoor visual", "billboard advertisement, minimal words, one bold image, readable at distance", "16:9"],
+    ]},
+    { cat: "Announcement", icon: "🔔", items: [
+      ["Product Launch", "Introduce something new with impact", "product launch announcement, dramatic reveal composition, premium feel", "16:9"],
+      ["Event Invite", "Promote an event with date and energy", "event invitation graphic with space for date and venue details", "1:1"],
+      ["Milestone", "Celebrate achievements", "celebration graphic for a company milestone, confetti-free, elegant", "1:1"],
+      ["Hiring Poster", "Attract talent with eye-catching visuals", "we-are-hiring poster, welcoming and modern, space for role titles", "4:3"],
+      ["Coming Soon", "Build anticipation with a teaser", "coming-soon teaser image, mysterious and intriguing, soft reveal", "16:9"],
+    ]},
+    { cat: "Blog & Content", icon: "📝", items: [
+      ["Blog Hero", "Set the tone for articles", "blog hero image, editorial composition, generous negative space for title", "16:9"],
+      ["Newsletter Header", "Branded banner for emails", "email newsletter header banner, slim and elegant", "16:9"],
+      ["Case Study Cover", "Showcase client results", "case study cover image, professional, success-story mood", "4:3"],
+      ["Podcast Cover", "Square artwork for listings", "podcast cover art, bold central motif, works at small sizes", "1:1"],
+      ["Slide Deck Cover", "Title slide visual", "presentation title slide background, clean with focal graphic on one side", "16:9"],
+    ]},
+  ];
+
+  /* ================= boot ================= */
+  async function boot() {
+    await initAuth();
+    await refreshBrands();
+    if (!brands.length) {
+      $("#ob-close").hidden = true;
+      showOnboard("add");
+    } else {
+      brand = brands[0];
+      enterApp();
+    }
+    refreshCredits();
+  }
+
+  async function refreshBrands() {
+    try { brands = (await api("/brands")).filter((b) => b.status === "ready"); } catch { brands = []; }
+  }
+  async function refreshCredits() {
+    try { const c = await api("/account/credits"); $("#credits").innerHTML = "credits: <b>" + c.credits + "</b>"; } catch {}
+  }
+
+  /* ================= onboarding ================= */
+  function showOnboard(view) {
+    $("#onboard").classList.add("active");
+    $("#shell").classList.remove("active");
+    $("#ob-add").classList.toggle("active", view === "add");
+    $("#ob-extract").classList.toggle("active", view === "extract");
+    $("#ob-close").hidden = !brands.length;
+  }
+  $("#ob-close").addEventListener("click", () => enterApp());
+
+  $("#add-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    let url = $("#url-input").value.trim();
+    if (!url) return;
+    if (!/^https?:\/\//i.test(url)) url = "https://" + url;
+    $("#add-error").textContent = "";
+    $("#go-btn").disabled = true;
+    try {
+      const created = await api("/brands", { method: "POST", body: JSON.stringify({ url }) });
+      runExtraction(created.id);
+    } catch (err) { $("#add-error").textContent = err.message; }
+    finally { $("#go-btn").disabled = false; }
+  });
+
+  async function runExtraction(brandId) {
+    showOnboard("extract");
+    $("#facts").innerHTML = "";
+    $("#begin-btn").style.display = "none";
+    $("#extract-title").textContent = "Extracting brand identity";
+    $("#extract-sub").textContent = "This is a one-time setup for your brand";
+    $("#eta").style.display = "block";
+    const steps = $$("#steps .step");
+    steps.forEach((s) => s.classList.remove("done", "doing"));
+    let idx = 0; steps[0].classList.add("doing");
+    let eta = 22;
+    const tick = setInterval(() => {
+      eta = Math.max(3, eta - 2);
+      $("#eta").textContent = "About " + eta + " seconds remaining";
+      if (idx < steps.length - 1) { steps[idx].classList.replace("doing", "done"); idx++; steps[idx].classList.add("doing"); }
+    }, 3800);
+
+    let b = null;
+    for (let i = 0; i < 90; i++) {
+      await sleep(2000);
+      try { b = await api("/brands/" + brandId); } catch { continue; }
+      if (b.status !== "analyzing") break;
+    }
+    clearInterval(tick);
+
+    if (!b || b.status !== "ready") {
+      steps.forEach((s) => s.classList.remove("doing"));
+      $("#extract-title").textContent = "That didn’t work";
+      $("#extract-sub").textContent = b?.error || "The site couldn’t be analyzed. Try another URL.";
+      $("#eta").style.display = "none";
+      const btn = $("#begin-btn");
+      btn.style.display = "block"; btn.textContent = "Try another website";
+      btn.onclick = () => showOnboard("add");
+      return;
+    }
+
+    brand = b;
+    const p = b.profile || {};
+    const logoHtml = b.logoUrl
+      ? `<img src="${esc(b.logoUrl)}" onerror="this.outerHTML='${esc((p.name||"?").trim()[0]||"?")}'" />`
+      : esc((p.name || "?").trim()[0] || "?");
+    const facts = [];
+    facts.push(`<div class="fact"><div class="logo-tile" style="background:${esc(primary(b))}">${logoHtml}</div></div>`);
+    facts.push(`<div class="fact"><h4>About</h4><div class="body"><b>${esc(p.name||"")}</b> — ${esc(p.description||"")}</div></div>`);
+    if (p.tagline) facts.push(`<div class="fact"><h4>Tagline</h4><div class="body" style="font-family:var(--font-display);font-style:italic;font-size:17px">“${esc(p.tagline)}”</div></div>`);
+    if (p.colors?.length) facts.push(`<div class="fact"><h4>Palette</h4><div class="palette">${p.colors.map((c)=>`<span class="chip"><i style="background:${esc(c.hex)}"></i><small>${esc(c.hex)}</small></span>`).join("")}</div></div>`);
+    if (p.fonts?.length) facts.push(`<div class="fact"><h4>Fonts</h4><div class="body">${p.fonts.map((f)=>esc(f.name)+(f.role?` <span style="color:var(--ink-faint)">(${esc(f.role)})</span>`:"")).join("<br/>")}</div></div>`);
+    if (p.styleKeywords?.length) facts.push(`<div class="fact"><h4>Style</h4><div class="tags">${p.styleKeywords.map((k)=>`<span class="tag">${esc(k)}</span>`).join("")}</div></div>`);
+    if (p.imageryGuidelines) facts.push(`<div class="fact span2"><h4>Imagery guidelines</h4><div class="body">${esc(p.imageryGuidelines)}</div></div>`);
+    $("#facts").innerHTML = facts.join("");
+    $$(".fact").forEach((f, i) => setTimeout(() => f.classList.add("show"), 120 + i * 150));
+
+    for (const s of steps) {
+      if (!s.classList.contains("done")) {
+        steps.forEach((x) => x.classList.remove("doing"));
+        s.classList.add("doing"); await sleep(320); s.classList.replace("doing", "done");
+      }
+    }
+    $("#eta").style.display = "none";
+    $("#extract-title").textContent = "Brand identity generated";
+    $("#extract-sub").textContent = "Now everything you create is on-brand.";
+    const btn = $("#begin-btn");
+    btn.textContent = "Let’s Begin"; btn.style.display = "block";
+    btn.onclick = async () => { await refreshBrands(); brand = brands.find((x) => x.id === b.id) || b; enterApp(); };
+  }
+
+  /* ================= app shell ================= */
+  function enterApp() {
+    $("#onboard").classList.remove("active");
+    $("#shell").classList.add("active");
+    renderBrandSelect();
+    renderOverview();
+    renderBrandPage();
+    renderIdeas();
+    loadImages();
+    gotoPage("overview");
+    if (pollTimer) clearInterval(pollTimer);
+    pollTimer = setInterval(loadImages, 3000);
+    refreshCredits();
+  }
+
+  function gotoPage(name) {
+    $$(".nav-item").forEach((n) => n.classList.toggle("on", n.dataset.page === name));
+    $$(".page").forEach((p) => p.classList.toggle("on", p.id === "page-" + name));
+    $("#dock").classList.toggle("on", ["overview", "images", "ideas"].includes(name));
+    $("#shell .main").scrollTo(0, 0);
+  }
+  $$(".nav-item").forEach((n) => n.addEventListener("click", () => gotoPage(n.dataset.page)));
+  $$("[data-goto]").forEach((b) => b.addEventListener("click", () => gotoPage(b.dataset.goto)));
+  $("#add-brand-2").addEventListener("click", () => { $("#url-input").value = ""; showOnboard("add"); });
+
+  function monoHtml(b, size) {
+    const inner = b.logoUrl ? `<img src="${esc(b.logoUrl)}" onerror="this.remove()" />` : "";
+    return `<span class="mono" style="background:${esc(primary(b))};width:${size}px;height:${size}px">${inner || esc((b.name||"?").trim()[0]||"?")}</span>`;
+  }
+  function renderBrandSelect() {
+    $("#brand-select").innerHTML = `${monoHtml(brand, 22)}<span>${esc(hostOf(brand.url))}</span><span class="car">▾</span>`;
+    $("#brand-menu").innerHTML = brands.map((b) =>
+      `<button data-bid="${b.id}">${monoHtml(b, 22)}<span>${esc(b.name||hostOf(b.url))}</span></button>`).join("") +
+      `<button id="menu-add"><span class="mono" style="background:var(--accent-wash);color:var(--accent-deep);width:22px;height:22px">+</span><span>Add a brand</span></button>`;
+    $$("#brand-menu [data-bid]").forEach((el) => el.addEventListener("click", () => {
+      brand = brands.find((b) => b.id === el.dataset.bid); $("#brand-menu").classList.remove("open"); enterApp();
+    }));
+    $("#menu-add").addEventListener("click", () => { $("#brand-menu").classList.remove("open"); $("#url-input").value = ""; showOnboard("add"); });
+  }
+  $("#brand-select").addEventListener("click", (e) => { e.stopPropagation(); $("#brand-menu").classList.toggle("open"); });
+  document.addEventListener("click", () => $("#brand-menu").classList.remove("open"));
+
+  /* ================= overview ================= */
+  function renderOverview() {
+    const p = brand.profile || {};
+    $("#ov-logo").style.background = primary(brand);
+    $("#ov-logo").innerHTML = brand.logoUrl
+      ? `<img src="${esc(brand.logoUrl)}" onerror="this.outerHTML='${esc((p.name||"?")[0]||"?")}'" />`
+      : esc((p.name || "?").trim()[0] || "?");
+    $("#ov-name").textContent = p.name || hostOf(brand.url);
+    $("#ov-tags").innerHTML = (p.styleKeywords || (p.tone||"").split(",")).slice(0, 4).map((k)=>`<span class="tag">${esc(String(k).trim())}</span>`).join("");
+    $("#ov-swatches").innerHTML = (p.colors || []).slice(0, 5).map((c)=>`<i style="background:${esc(c.hex)}"></i>`).join("");
+  }
+
+  /* ================= brand page ================= */
+  function renderBrandPage() {
+    const p = brand.profile || {};
+    $("#b-logo").style.background = primary(brand);
+    $("#b-logo").innerHTML = brand.logoUrl
+      ? `<img src="${esc(brand.logoUrl)}" onerror="this.outerHTML='${esc((p.name||"?")[0]||"?")}'" />`
+      : esc((p.name || "?").trim()[0] || "?");
+    $("#b-host").textContent = hostOf(brand.url);
+    $("#b-desc").textContent = p.description || "";
+    $("#b-tagline").textContent = p.tagline ? `“${p.tagline}”` : "—";
+    $("#b-colors").innerHTML = (p.colors||[]).map((c)=>`<i title="${esc(c.hex)}${c.role?" · "+esc(c.role):""}" style="background:${esc(c.hex)}"></i>`).join("");
+    $("#b-fonts").innerHTML = (p.fonts||[]).map((f)=>`<div class="font-tile"><div class="aa">Aa Bb Cc</div><small>${esc(f.name)}${f.role?" · "+esc(f.role):""}</small></div>`).join("") || `<span style="color:var(--ink-faint);font-size:13px">No fonts detected</span>`;
+    $("#b-tone").innerHTML = (p.tone||"").split(",").map((t)=>t.trim()).filter(Boolean).map((t)=>`<span class="tag">${esc(t)}</span>`).join("");
+    $("#b-aesthetic").textContent = p.imageryGuidelines || "—";
+  }
+
+  /* ================= ideas ================= */
+  function renderIdeas() {
+    $("#idea-sections").innerHTML = IDEAS.map((sec) => `
+      <div class="idea-section">
+        <h3><span>${sec.icon}</span> ${esc(sec.cat)}</h3>
+        <div class="idea-grid">${sec.items.map(([name, desc, prompt, ratio]) => `
+          <button class="idea" data-prompt="${esc(prompt)}" data-ratio="${ratio}" data-name="${esc(name)}">
+            <div class="ic">✦</div><b>${esc(name)}</b><p>${esc(desc)}</p>
+          </button>`).join("")}
+        </div>
+      </div>`).join("");
+    $$(".idea").forEach((el) => el.addEventListener("click", () => {
+      $("#dock-prompt").value = el.dataset.prompt;
+      $("#dock-ratio").value = el.dataset.ratio;
+      $("#dock-note").textContent = el.dataset.name + " template loaded — tweak the prompt, then Create.";
+      $("#dock-prompt").focus();
+    }));
+    $("#dock-chips").innerHTML = ["LinkedIn Post","Instagram Story","Product Launch","Blog Hero"].map((n) => {
+      const it = IDEAS.flatMap((s)=>s.items).find((i)=>i[0]===n);
+      return `<button class="dchip" data-prompt="${esc(it[2])}" data-ratio="${it[3]}">${esc(n)}</button>`;
+    }).join("");
+    $$(".dchip").forEach((el) => el.addEventListener("click", () => {
+      $("#dock-prompt").value = el.dataset.prompt; $("#dock-ratio").value = el.dataset.ratio; $("#dock-prompt").focus();
+    }));
+  }
+
+  /* ================= create ================= */
+  $("#dock-go").addEventListener("click", async () => {
+    const prompt = $("#dock-prompt").value.trim();
+    if (!prompt) { $("#dock-note").textContent = "Describe the image first."; return; }
+    $("#dock-go").disabled = true;
+    $("#dock-note").textContent = "Queued — generating…";
+    try {
+      await api("/images/generations", { method: "POST", body: JSON.stringify({
+        brandSessionId: brand.id, prompt,
+        aspectRatio: $("#dock-ratio").value,
+        resolution: $("#dock-res").value,
+        variants: Number($("#dock-n").value),
+      })});
+      $("#dock-note").textContent = "";
+      gotoPage("images");
+      refreshCredits(); loadImages();
+    } catch (err) { $("#dock-note").textContent = err.message; }
+    finally { $("#dock-go").disabled = false; }
+  });
+
+  /* ================= gallery ================= */
+  $$("#img-filters .fbtn").forEach((b) => b.addEventListener("click", () => {
+    $$("#img-filters .fbtn").forEach((x) => x.classList.remove("sel"));
+    b.classList.add("sel"); imgFilter = b.dataset.f; loadImages();
+  }));
+
+  function tileHtml(im) {
+    const body = im.status === "completed"
+      ? `<img src="${esc(im.imageUrl)}" loading="lazy" data-full="${esc(im.imageUrl)}" />`
+      : im.status === "failed"
+      ? `<div class="ph" style="animation:none;background:#fdf1f1">✗</div>`
+      : `<div class="ph">brewing…</div>`;
+    const acts = im.status === "completed" ? `
+      <div class="acts">
+        <button class="act" data-edit="${im.id}">Edit</button>
+        <button class="act" data-resize="${im.id}">Resize</button>
+        <a class="act" href="${esc(im.imageUrl)}" download>Save</a>
+      </div>` : im.status === "failed" ? `<div class="failed">${esc(im.error||"failed")}</div>` : "";
+    return `<div class="tile">${body}<div class="meta"><div class="kind">${esc(im.kind)}${im.aspectRatio?" · "+esc(im.aspectRatio):""}</div><div class="p">${esc(im.prompt||"—")}</div></div>${acts}</div>`;
+  }
+  function wireTiles(root) {
+    root.querySelectorAll("[data-edit]").forEach((b) => b.addEventListener("click", () => { targetImage = b.dataset.edit; $("#edit-prompt").value = ""; $("#edit-veil").classList.add("open"); }));
+    root.querySelectorAll("[data-resize]").forEach((b) => b.addEventListener("click", () => { targetImage = b.dataset.resize; $("#resize-veil").classList.add("open"); }));
+    root.querySelectorAll("img[data-full]").forEach((img) => img.addEventListener("click", () => { $("#lightbox-img").src = img.dataset.full; $("#lightbox").classList.add("open"); }));
+  }
+
+  let searchQ = "";
+  let searchT = null;
+  document.addEventListener("input", (e) => {
+    if (e.target.id !== "img-search") return;
+    clearTimeout(searchT);
+    searchT = setTimeout(() => { searchQ = e.target.value.trim(); loadImages(); }, 350);
+  });
+
+  async function loadImages() {
+    if (!brand) return;
+    try {
+      const all = await api("/images?brandSessionId=" + brand.id + "&limit=100" + (searchQ ? "&q=" + encodeURIComponent(searchQ) : ""));
+      // images page (filtered)
+      const filtered = imgFilter ? all.filter((i) => i.kind === imgFilter) : all;
+      $("#img-empty").hidden = filtered.length > 0;
+      $("#img-grid").innerHTML = filtered.map(tileHtml).join("");
+      wireTiles($("#img-grid"));
+      // uploads page
+      const ups = all.filter((i) => i.kind === "upload");
+      $("#up-empty").hidden = ups.length > 0;
+      $("#up-grid").innerHTML = ups.map(tileHtml).join("");
+      wireTiles($("#up-grid"));
+      // overview strip
+      const done = all.filter((i) => i.status === "completed").slice(0, 12);
+      $("#ov-thumbs-empty").hidden = done.length > 0;
+      $("#ov-thumbs").innerHTML = done.map((i) => `<img src="${esc(i.imageUrl)}" data-full="${esc(i.imageUrl)}" loading="lazy" />`).join("");
+      $("#ov-thumbs img").forEach?.call?.(null);
+      $$("#ov-thumbs img").forEach((img) => img.addEventListener("click", () => { $("#lightbox-img").src = img.dataset.full; $("#lightbox").classList.add("open"); }));
+    } catch {}
+  }
+
+  /* ================= uploads ================= */
+  $("#upload-btn").addEventListener("click", async () => {
+    const url = $("#upload-url").value.trim();
+    if (!url) return;
+    try {
+      await api("/images/uploads", { method: "POST", body: JSON.stringify({ url, brandSessionId: brand.id }) });
+      $("#upload-url").value = ""; loadImages();
+    } catch (e) { alert(e.message); }
+  });
+
+  /* ================= modals ================= */
+  $("#edit-go").addEventListener("click", async () => {
+    const prompt = $("#edit-prompt").value.trim();
+    if (!prompt || !targetImage) return;
+    $("#edit-veil").classList.remove("open");
+    try { await api(`/images/${targetImage}/edit`, { method: "POST", body: JSON.stringify({ prompt }) }); refreshCredits(); loadImages(); } catch (e) { alert(e.message); }
+  });
+  $("#resize-go").addEventListener("click", async () => {
+    const aspectRatio = $("#resize-ratios .sel").dataset.r;
+    if (!targetImage) return;
+    $("#resize-veil").classList.remove("open");
+    try { await api(`/images/${targetImage}/resize`, { method: "POST", body: JSON.stringify({ aspectRatio }) }); refreshCredits(); loadImages(); } catch (e) { alert(e.message); }
+  });
+  $$("#resize-ratios .ratio").forEach((r) => r.addEventListener("click", () => {
+    $$("#resize-ratios .ratio").forEach((x) => x.classList.remove("sel")); r.classList.add("sel");
+  }));
+  $$("[data-close]").forEach((b) => b.addEventListener("click", () => b.closest(".veil").classList.remove("open")));
+  $$(".veil").forEach((v) => v.addEventListener("click", (e) => { if (e.target === v) v.classList.remove("open"); }));
+
+  boot();
+})();
+</script>
+</body>
+</html>
