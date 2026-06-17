@@ -1,4 +1,5 @@
 import Fastify from "fastify";
+import cors from "@fastify/cors";
 import { applySchema } from "./db/migrate.js";
 import { env } from "./lib/env.js";
 import { registerMcp } from "./mcp/server.js";
@@ -8,6 +9,8 @@ const app = Fastify({
   logger: { level: "info" },
   bodyLimit: 25 * 1024 * 1024,
 });
+
+await app.register(cors, { origin: true, credentials: true });
 
 await applySchema().catch((err) => {
   console.error(
