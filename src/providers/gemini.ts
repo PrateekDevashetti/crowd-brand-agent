@@ -3,6 +3,7 @@ import sharp from "sharp";
 import { env } from "../lib/env.js";
 import { BRAND_EXTRACTION_PROMPT } from "./brandExtractor.js";
 import { maybeOpenAIProvider } from "./openai.js";
+import { maybeOpenRouterProvider } from "./openrouter.js";
 import type {
   BrandProfile,
   EditInput,
@@ -215,6 +216,11 @@ function selectProvider(): ImageProvider {
     case "openai": {
       const p = maybeOpenAIProvider();
       if (!p) throw new Error("IMAGE_PROVIDER=openai but OPENAI_API_KEY is empty");
+      return p;
+    }
+    case "openrouter": {
+      const p = maybeOpenRouterProvider();
+      if (!p) throw new Error("IMAGE_PROVIDER=openrouter but OPENROUTER_API_KEY is empty");
       return p;
     }
     case "mock":

@@ -10,7 +10,8 @@ export const env = {
   devApiKey: process.env.DEV_API_KEY ?? "dev-secret",
   geminiApiKey: process.env.GEMINI_API_KEY ?? "",
   openaiApiKey: process.env.OPENAI_API_KEY ?? "",
-  /** "gemini" | "openai" | "mock" | "" (auto: gemini → openai → mock) */
+  openrouterApiKey: process.env.OPENROUTER_API_KEY ?? "",
+  /** "gemini" | "openai" | "openrouter" | "mock" | "" (auto: gemini → openai → mock) */
   imageProvider: process.env.IMAGE_PROVIDER ?? "",
   clerkPublishableKey: process.env.CLERK_PUBLISHABLE_KEY ?? "",
   clerkSecretKey: process.env.CLERK_SECRET_KEY ?? "",
