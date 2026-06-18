@@ -63,6 +63,15 @@ CREATE TABLE IF NOT EXISTS credit_events (
 ALTER TABLE brands ADD COLUMN IF NOT EXISTS logo_image_id UUID REFERENCES images(id) ON DELETE SET NULL;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS clerk_id TEXT UNIQUE;
 
+-- Per-user, per-provider trial spend cap ($3 / 10-day rolling window).
+CREATE TABLE IF NOT EXISTS provider_spend (
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  provider TEXT NOT NULL,
+  cost_cents INTEGER NOT NULL DEFAULT 0,
+  window_start TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id, provider)
+);
+
 -- Dev seed: DEV_API_KEY in .env maps requests to this user (see src/lib/auth.ts)
 INSERT INTO users (id, email, credits)
 VALUES ('00000000-0000-0000-0000-000000000001', 'dev@local', 1000)

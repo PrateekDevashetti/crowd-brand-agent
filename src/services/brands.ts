@@ -1,5 +1,6 @@
 import { pool } from "../lib/db.js";
 import { Errors } from "../lib/errors.js";
+import { assertProviderCap, addProviderSpend, extractionProviderName } from "../lib/providerCap.js";
 import { brandQueue } from "../queue/queues.js";
 import { publicUrl } from "../providers/storage.js";
 import type { BrandProfile } from "../providers/imageProvider.js";
@@ -40,12 +41,17 @@ export async function createBrand(userId: string, url: string) {
   if (!/^https?:$/.test(parsed.protocol)) {
     throw Errors.validation("Brand URL must be http(s).");
   }
+  // Trial cap: brand extraction runs one LLM distill pass (~$0.03) on its provider.
+  const capProvider = extractionProviderName();
+  await assertProviderCap(userId, capProvider, 3);
+
   const { rows } = await pool.query<BrandRow>(
     "INSERT INTO brands (user_id, url, status) VALUES ($1, $2, 'analyzing') RETURNING *",
     [userId, parsed.toString()],
   );
   const brand = rows[0];
   await brandQueue.add("onboard", { brandId: brand.id, url: brand.url });
+  await addProviderSpend(userId, capProvider, 3);
   return serialize(brand);
 }
 
