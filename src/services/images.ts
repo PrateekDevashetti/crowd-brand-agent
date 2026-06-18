@@ -2,7 +2,8 @@ import { setTimeout as sleep } from "node:timers/promises";
 import { pool } from "../lib/db.js";
 import { creditCost, deductCredits } from "../lib/credits.js";
 import { Errors } from "../lib/errors.js";
-import { assertProviderCap, addProviderSpend, imageProviderName, imageSpendCents } from "../lib/providerCap.js";
+import { imageSpendCents } from "../lib/providerCap.js";
+import { chargeWallet } from "../lib/walletClient.js";
 import { publicUrl } from "../providers/storage.js";
 import { imageQueue, type ImageKind } from "../queue/queues.js";
 import { requireReadyBrand } from "./brands.js";
@@ -110,13 +111,11 @@ export async function createGeneration(
     await requireCompletedImage(userId, refId);
   }
 
-  const capProvider = imageProviderName();
-  const spendCents = imageSpendCents(resolution, variants);
-  await assertProviderCap(userId, capProvider, spendCents);
+  // Charge the unified credit wallet (canopy-api) — throws 402 if out of credits.
+  await chargeWallet(userId, imageSpendCents(resolution, variants), "brand-image-generation");
 
   const cost = creditCost(resolution, variants);
   await deductCredits(userId, cost, "image-generation");
-  await addProviderSpend(userId, capProvider, spendCents);
   const perVariant = cost / variants;
 
   const ids: string[] = [];
@@ -157,11 +156,8 @@ async function createDerived(
   const parent = await requireCompletedImage(userId, parentImageId);
   const cost = opts.chargeCredits ? creditCost(parent.resolution, 1) : 0;
   if (cost > 0) {
-    const capProvider = imageProviderName();
-    const spendCents = imageSpendCents(parent.resolution, 1);
-    await assertProviderCap(userId, capProvider, spendCents);
+    await chargeWallet(userId, imageSpendCents(parent.resolution, 1), `brand-image-${kind}`);
     await deductCredits(userId, cost, `image-${kind}`);
-    await addProviderSpend(userId, capProvider, spendCents);
   }
 
   const row = await insertImage(userId, {
