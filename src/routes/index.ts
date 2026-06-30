@@ -8,6 +8,7 @@ import { ApiError, Errors } from "../lib/errors.js";
 import * as accountService from "../services/account.js";
 import * as brandService from "../services/brands.js";
 import * as imageService from "../services/images.js";
+import { loadImage } from "../providers/storage.js";
 
 const ok = <T>(data: T) => ({ data });
 
@@ -105,7 +106,8 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
   app.get<{ Params: { id: string } }>("/img/:id", async (req, reply) => {
     const file = await imageService.getImageFile(req.params.id);
     if (!file) return reply.status(404).send({ defined: true, code: "IMAGE_NOT_FOUND", status: 404, message: "Not found", data: {} });
-    return reply.type(file.mimeType).send(createReadStream(file.storagePath));
+    const buffer = await loadImage(file.storagePath);
+    return reply.type(file.mimeType).send(buffer);
   });
 
   app.get("/healthz", async () => ({ ok: true }));

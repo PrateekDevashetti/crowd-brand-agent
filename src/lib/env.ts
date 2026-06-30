@@ -19,6 +19,12 @@ export const env = {
   anthropicApiKey: process.env.ANTHROPIC_API_KEY ?? "",
   anthropicModel: process.env.ANTHROPIC_MODEL ?? "claude-sonnet-4-6",
   storageDir: process.env.STORAGE_DIR ?? "./storage",
+  /** Cloudflare R2 (S3-compatible) — when all are set, images are stored in R2 instead of local disk. */
+  r2AccountId: process.env.R2_ACCOUNT_ID ?? "",
+  r2AccessKeyId: process.env.R2_ACCESS_KEY_ID ?? "",
+  r2SecretAccessKey: process.env.R2_SECRET_ACCESS_KEY ?? "",
+  r2Bucket: process.env.R2_BUCKET ?? "",
+  r2PublicUrl: process.env.R2_PUBLIC_URL ?? "",
 };
 
 /** Seeded by src/db/schema.sql; DEV_API_KEY maps to this user. */
