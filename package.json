@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
+    "test": "tsx --test test/*.test.ts",
     "worker": "tsx src/worker.ts",
     "try": "node scripts/try-it.mjs",
     "build": "tsc",

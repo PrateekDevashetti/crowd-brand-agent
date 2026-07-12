@@ -4,6 +4,7 @@ import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
 import { applySchema } from "./db/migrate.js";
 import { env } from "./lib/env.js";
+import { hasUnsafeDevSecret, isOriginAllowed, parseAllowedOrigins } from "./lib/security.js";
 import { registerMcp } from "./mcp/server.js";
 import { registerRoutes } from "./routes/index.js";
 
@@ -15,18 +16,13 @@ const app = Fastify({
 });
 
 // ── CORS: allowlist in production, permissive in dev ──
-const allowedOrigins = process.env.CORS_ALLOWED_ORIGINS
-  ? process.env.CORS_ALLOWED_ORIGINS.split(",").map((o) => o.trim()).filter(Boolean)
-  : isProduction
-    ? [] // no origins = reject all browser requests until configured
-    : null; // null = dev: accept all
+const allowedOrigins = parseAllowedOrigins(process.env.CORS_ALLOWED_ORIGINS, isProduction);
 
 await app.register(cors, {
   origin: allowedOrigins === null
     ? true // dev: reflect any origin
     : (origin, cb) => {
-        if (!origin) return cb(null, true); // non-browser (curl, server-to-server)
-        const ok = allowedOrigins.some((a) => origin === a || origin.endsWith(`.${a.replace(/^https?:\/\//, "")}`));
+        const ok = isOriginAllowed(origin, allowedOrigins);
         if (!ok) app.log.warn({ origin, allowed: allowedOrigins }, "[cors] rejected");
         cb(null, ok);
       },
@@ -46,7 +42,7 @@ await app.register(rateLimit, {
 });
 
 // ── Dev-secret production gate: reject dev-secret in production ──
-if (isProduction && env.devApiKey === "dev-secret") {
+if (hasUnsafeDevSecret(isProduction, env.devApiKey)) {
   app.log.error("[brandlayer] FATAL: DEV_API_KEY is 'dev-secret' in production. Set a real key or unset it.");
   process.exit(1);
 }
