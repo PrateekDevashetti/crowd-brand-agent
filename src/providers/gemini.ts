@@ -225,9 +225,15 @@ function selectProvider(): ImageProvider {
     }
     case "mock":
       return new MockProvider();
-    default: // auto
-      if (env.geminiApiKey) return new GeminiProvider(env.geminiApiKey);
-      return maybeOpenAIProvider() ?? new MockProvider();
+    default: // auto — prefer OpenRouter so all brand-agent spend tracks through
+             // OpenRouter credits (OpenAI credits expired). GPT + image models run
+             // via OpenRouter. Falls back gemini → openai → mock.
+      return (
+        maybeOpenRouterProvider() ??
+        (env.geminiApiKey ? new GeminiProvider(env.geminiApiKey) : undefined) ??
+        maybeOpenAIProvider() ??
+        new MockProvider()
+      );
   }
 }
 

@@ -9,6 +9,9 @@ const WINDOW_DAYS = Number(process.env.TRIAL_CAP_WINDOW_DAYS ?? 10);
 export function imageProviderName(): string {
   const p = (process.env.IMAGE_PROVIDER ?? "").toLowerCase();
   if (p === "openai" || p === "openrouter" || p === "gemini") return p;
+  // Prefer OpenRouter for unified credit tracking (OpenAI credits expired). Must
+  // match selectProvider()'s auto order so spend is attributed to the real provider.
+  if (process.env.OPENROUTER_API_KEY) return "openrouter";
   if (process.env.GEMINI_API_KEY) return "gemini";
   if (process.env.OPENAI_API_KEY) return "openai";
   return "openrouter";
